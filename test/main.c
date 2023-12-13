@@ -1458,31 +1458,35 @@ void *qzCompressAndDecompress(void *arg)
     if (0 != pthread_mutex_lock(&g_lock_print)) {
         goto done;
     }
-    QZ_PRINT("[INFO] srv=");
-    if (COMP == service) {
-        QZ_PRINT("COMP");
-    } else if (DECOMP == service) {
-        QZ_PRINT("DECOMP");
-    } else if (BOTH == service) {
-        QZ_PRINT("BOTH");
-    } else {
-        QZ_ERROR("UNKNOWN\n");
-        pthread_mutex_unlock(&g_lock_print);
-        goto done;
-    }
-    QZ_PRINT(", tid=%ld, verify=%d, count=%d, msecavg=%llu, "
-             "bytes=%lu, %Lf Gbps",
-             tid, verify_data, count, el_m/count, org_src_sz, rate);
+    // QZ_PRINT("[INFO] srv=");
+    // if (COMP == service) {
+    //     QZ_PRINT("COMP");
+    // } else if (DECOMP == service) {
+    //     QZ_PRINT("DECOMP");
+    // } else if (BOTH == service) {
+    //     QZ_PRINT("BOTH");
+    // } else {
+    //     QZ_ERROR("UNKNOWN\n");
+    //     pthread_mutex_unlock(&g_lock_print);
+    //     goto done;
+    // }
+    printf("%lf,%lf,%LF,%ld,%ld\n",
+        (1.0 * decomp_out_sz / comp_out_sz),
+        (1.0 *el_m)/count,
+        1.0 * rate,
+        comp_out_sz, 
+        decomp_out_sz);
     if (DECOMP != service) {
+        QZ_ERROR("Only measuring decomp latency using this prg\n");
+        exit(-1);
         QZ_PRINT(", input_len=%lu, comp_len=%lu, ratio=%f%%",
                  org_src_sz, comp_out_sz,
                  ((double)comp_out_sz / (double)org_src_sz) * 100);
     }
-    if (COMP != service) {
-        QZ_PRINT(", comp_len=%lu, decomp_len=%lu",
-                 comp_out_sz, decomp_out_sz);
-    }
-    QZ_PRINT("\n");
+    // if (COMP != service) {
+    //     QZ_PRINT(", comp_len=%lu, decomp_len=%lu",
+    //              comp_out_sz, decomp_out_sz);
+    // }
     if (test_thread_safe_flag == 1) {
         if (thread_sleep == 0) {
             srand(time(NULL));
