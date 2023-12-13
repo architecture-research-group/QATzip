@@ -1349,7 +1349,6 @@ void *qzCompressAndDecompress(void *arg)
 
     // Start the testing
     for (k = 0; k < count; k++) {
-        (void)gettimeofday(&ts, NULL);
         if (DECOMP != service) {
             comp_out_sz = org_comp_out_sz;
             QZ_DEBUG("thread %ld before Compressed %lu bytes into %lu\n", tid, src_sz,
@@ -1398,8 +1397,11 @@ void *qzCompressAndDecompress(void *arg)
             for (int i = 0; i < num_blocks; i ++) {
                 in_sz = compressed_blocks_sz[i];
                 out_sz = decomp_out_sz - produced;
+                (void)gettimeofday(&ts, NULL);
                 rc = qzDecompress(&sess, comp_out + consumed, (uint32_t *)(&in_sz),
                                   decomp_out + produced, (uint32_t *)(&out_sz));
+                (void)gettimeofday(&te, NULL);
+
                 if (rc != QZ_OK) {
                     QZ_ERROR("ERROR: Decompression FAILED with return value: %d\n", rc);
                     dumpInputData(src_sz, src);
@@ -1420,7 +1422,6 @@ void *qzCompressAndDecompress(void *arg)
                      decomp_out_sz);
         }
 
-        (void)gettimeofday(&te, NULL);
 
         if (verify_data && COMP != service) {
             QZ_DEBUG("verify data..\n");
@@ -1469,9 +1470,9 @@ void *qzCompressAndDecompress(void *arg)
         pthread_mutex_unlock(&g_lock_print);
         goto done;
     }
-    QZ_PRINT(", tid=%ld, verify=%d, count=%d, msec=%llu, "
+    QZ_PRINT(", tid=%ld, verify=%d, count=%d, msecavg=%llu, "
              "bytes=%lu, %Lf Gbps",
-             tid, verify_data, count, el_m, org_src_sz, rate);
+             tid, verify_data, count, el_m/count, org_src_sz, rate);
     if (DECOMP != service) {
         QZ_PRINT(", input_len=%lu, comp_len=%lu, ratio=%f%%",
                  org_src_sz, comp_out_sz,
