@@ -1472,7 +1472,7 @@ void *qzCompressAndDecompress(void *arg)
     // }
     printf("%lf,%lf,%LF,%ld,%ld\n",
         (1.0 * decomp_out_sz / comp_out_sz),
-        (1.0 *el_m)/count,
+        ((1.0 *el_m)/count) * 1000,
         1.0 * rate,
         comp_out_sz, 
         decomp_out_sz);
