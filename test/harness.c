@@ -1210,7 +1210,7 @@ void *qzCompressAndDecompress(void *arg)
     size_t src_sz, comp_out_sz, decomp_out_sz;
     size_t block_size, in_sz, out_sz, consumed, produced;
     size_t num_blocks;
-    struct timeval ts, te;
+    struct timespec ts, te;
     unsigned long long ts_m, te_m, el_m;
     long double sec, rate;
     const size_t org_src_sz = ((TestArg_T *)arg)->src_sz;
@@ -1349,7 +1349,6 @@ void *qzCompressAndDecompress(void *arg)
 
     // Start the testing
     for (k = 0; k < count; k++) {
-        (void)gettimeofday(&ts, NULL);
         if (DECOMP != service) {
             comp_out_sz = org_comp_out_sz;
             QZ_DEBUG("thread %ld before Compressed %lu bytes into %lu\n", tid, src_sz,
@@ -1398,8 +1397,11 @@ void *qzCompressAndDecompress(void *arg)
             for (int i = 0; i < num_blocks; i ++) {
                 in_sz = compressed_blocks_sz[i];
                 out_sz = decomp_out_sz - produced;
+                (void)clock_gettime(CLOCK_MONOTONIC,&ts);
                 rc = qzDecompress(&sess, comp_out + consumed, (uint32_t *)(&in_sz),
                                   decomp_out + produced, (uint32_t *)(&out_sz));
+                (void)clock_gettime(CLOCK_MONOTONIC, &te);
+
                 if (rc != QZ_OK) {
                     QZ_ERROR("ERROR: Decompression FAILED with return value: %d\n", rc);
                     dumpInputData(src_sz, src);
@@ -1420,7 +1422,6 @@ void *qzCompressAndDecompress(void *arg)
                      decomp_out_sz);
         }
 
-        (void)gettimeofday(&te, NULL);
 
         if (verify_data && COMP != service) {
             QZ_DEBUG("verify data..\n");
@@ -1437,8 +1438,8 @@ void *qzCompressAndDecompress(void *arg)
                 memset(decomp_out, 0, decomp_out_sz);
             }
         }
-        ts_m = (ts.tv_sec * 1000000) + ts.tv_usec;
-        te_m = (te.tv_sec * 1000000) + te.tv_usec;
+        ts_m = (ts.tv_sec * 1000000000) + ts.tv_nsec;
+        te_m = (te.tv_sec * 1000000000) + te.tv_nsec;
         el_m += te_m - ts_m;
     }
 
@@ -1457,31 +1458,35 @@ void *qzCompressAndDecompress(void *arg)
     if (0 != pthread_mutex_lock(&g_lock_print)) {
         goto done;
     }
-    QZ_PRINT("[INFO] srv=");
-    if (COMP == service) {
-        QZ_PRINT("COMP");
-    } else if (DECOMP == service) {
-        QZ_PRINT("DECOMP");
-    } else if (BOTH == service) {
-        QZ_PRINT("BOTH");
-    } else {
-        QZ_ERROR("UNKNOWN\n");
-        pthread_mutex_unlock(&g_lock_print);
-        goto done;
-    }
-    QZ_PRINT(", tid=%ld, verify=%d, count=%d, msec=%llu, "
-             "bytes=%lu, %Lf Gbps",
-             tid, verify_data, count, el_m, org_src_sz, rate);
+    // QZ_PRINT("[INFO] srv=");
+    // if (COMP == service) {
+    //     QZ_PRINT("COMP");
+    // } else if (DECOMP == service) {
+    //     QZ_PRINT("DECOMP");
+    // } else if (BOTH == service) {
+    //     QZ_PRINT("BOTH");
+    // } else {
+    //     QZ_ERROR("UNKNOWN\n");
+    //     pthread_mutex_unlock(&g_lock_print);
+    //     goto done;
+    // }
+    printf("%lf,%lf,%LF,%ld,%ld\n",
+        (1.0 * decomp_out_sz / comp_out_sz),
+        ((1.0 *el_m)/count) ,
+        1.0 * rate,
+        comp_out_sz, 
+        decomp_out_sz);
     if (DECOMP != service) {
+        QZ_ERROR("Only measuring decomp latency using this prg\n");
+        exit(-1);
         QZ_PRINT(", input_len=%lu, comp_len=%lu, ratio=%f%%",
                  org_src_sz, comp_out_sz,
                  ((double)comp_out_sz / (double)org_src_sz) * 100);
     }
-    if (COMP != service) {
-        QZ_PRINT(", comp_len=%lu, decomp_len=%lu",
-                 comp_out_sz, decomp_out_sz);
-    }
-    QZ_PRINT("\n");
+    // if (COMP != service) {
+    //     QZ_PRINT(", comp_len=%lu, decomp_len=%lu",
+    //              comp_out_sz, decomp_out_sz);
+    // }
     if (test_thread_safe_flag == 1) {
         if (thread_sleep == 0) {
             srand(time(NULL));
