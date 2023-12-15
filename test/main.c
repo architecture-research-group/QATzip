@@ -1210,7 +1210,7 @@ void *qzCompressAndDecompress(void *arg)
     size_t src_sz, comp_out_sz, decomp_out_sz;
     size_t block_size, in_sz, out_sz, consumed, produced;
     size_t num_blocks;
-    struct timeval ts, te;
+    struct timespec ts, te;
     unsigned long long ts_m, te_m, el_m;
     long double sec, rate;
     const size_t org_src_sz = ((TestArg_T *)arg)->src_sz;
@@ -1397,10 +1397,10 @@ void *qzCompressAndDecompress(void *arg)
             for (int i = 0; i < num_blocks; i ++) {
                 in_sz = compressed_blocks_sz[i];
                 out_sz = decomp_out_sz - produced;
-                (void)gettimeofday(&ts, NULL);
+                (void)clock_gettime(CLOCK_MONOTONIC,&ts);
                 rc = qzDecompress(&sess, comp_out + consumed, (uint32_t *)(&in_sz),
                                   decomp_out + produced, (uint32_t *)(&out_sz));
-                (void)gettimeofday(&te, NULL);
+                (void)clock_gettime(CLOCK_MONOTONIC, &te);
 
                 if (rc != QZ_OK) {
                     QZ_ERROR("ERROR: Decompression FAILED with return value: %d\n", rc);
@@ -1438,8 +1438,8 @@ void *qzCompressAndDecompress(void *arg)
                 memset(decomp_out, 0, decomp_out_sz);
             }
         }
-        ts_m = (ts.tv_sec * 1000000) + ts.tv_usec;
-        te_m = (te.tv_sec * 1000000) + te.tv_usec;
+        ts_m = (ts.tv_sec * 1000000000) + ts.tv_nsec;
+        te_m = (te.tv_sec * 1000000000) + te.tv_nsec;
         el_m += te_m - ts_m;
     }
 
@@ -1472,7 +1472,7 @@ void *qzCompressAndDecompress(void *arg)
     // }
     printf("%lf,%lf,%LF,%ld,%ld\n",
         (1.0 * decomp_out_sz / comp_out_sz),
-        ((1.0 *el_m)/count) * 1000,
+        ((1.0 *el_m)/count) ,
         1.0 * rate,
         comp_out_sz, 
         decomp_out_sz);
