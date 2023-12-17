@@ -32,7 +32,7 @@
 #
 ################################################################
 
-noinst_PROGRAMS = test bt
+noinst_PROGRAMS = test bt harness mt_membw_test
 test_SOURCES = main.c
 test_CFLAGS = \
               -I$(abs_top_srcdir)/include/ \
@@ -45,6 +45,34 @@ test_LDADD = \
              $(QATLIB_FLAGS) \
              $(USDMLIB_FLAGS)
 test_LDFLAGS = \
+               $(ICP_LDFLAGS)
+
+mt_membw_test_SOURCES = mt_membw_test.c
+mt_membw_test_CFLAGS = \
+              -I$(abs_top_srcdir)/include/ \
+              -I$(abs_top_srcdir)/src/    \
+              -I$(abs_top_srcdir)/utils/  \
+              $(COMMON_CFLAGS) \
+              $(ICP_INCLUDE_CFLAGS)
+mt_membw_test_LDADD = \
+             $(abs_top_srcdir)/src/.libs/libqatzip.a \
+             $(QATLIB_FLAGS) \
+             $(USDMLIB_FLAGS)
+mt_membw_test_LDFLAGS = \
+               $(ICP_LDFLAGS)
+
+harness_SOURCES = harness.c
+harness_CFLAGS = \
+              -I$(abs_top_srcdir)/include/ \
+              -I$(abs_top_srcdir)/src/    \
+              -I$(abs_top_srcdir)/utils/  \
+              $(COMMON_CFLAGS) \
+              $(ICP_INCLUDE_CFLAGS)
+harness_LDADD = \
+             $(abs_top_srcdir)/src/.libs/libqatzip.a \
+             $(QATLIB_FLAGS) \
+             $(USDMLIB_FLAGS)
+harness_LDFLAGS = \
                $(ICP_LDFLAGS)
 
 bt_SOURCES = bt.c
